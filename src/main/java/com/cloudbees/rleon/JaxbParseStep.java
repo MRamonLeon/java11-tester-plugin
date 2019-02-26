@@ -10,6 +10,8 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
@@ -17,14 +19,15 @@ import java.io.IOException;
 /**
  * A simple build step to check if the failure is caught during a build
  */
-public class JaxbParse extends Builder implements SimpleBuildStep {
+public class JaxbParseStep extends Builder implements SimpleBuildStep {
     private final String text;
 
     @DataBoundConstructor
-    public JaxbParse(String text) {
+    public JaxbParseStep(String text) {
         this.text = text;
     }
 
+    @Restricted(NoExternalUse.class)
     public String getText() {
         return text;
     }

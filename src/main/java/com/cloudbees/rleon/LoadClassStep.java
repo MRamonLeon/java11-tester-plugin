@@ -10,6 +10,8 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
@@ -25,6 +27,7 @@ public class LoadClassStep extends Builder implements SimpleBuildStep {
         this.classToLoad = classToLoad;
     }
 
+    @Restricted(NoExternalUse.class)
     public String getClassToLoad() {
         return classToLoad;
     }
