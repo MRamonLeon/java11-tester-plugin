@@ -19,17 +19,17 @@ import java.io.IOException;
 /**
  * A simple build step to check if the failure is caught during a build
  */
-public class JaxbParseStep extends Builder implements SimpleBuildStep {
-    private final String text;
+public class LoadClassUsingClassCLStep extends Builder implements SimpleBuildStep {
+    private final String classToLoad;
 
     @DataBoundConstructor
-    public JaxbParseStep(String text) {
-        this.text = text;
+    public LoadClassUsingClassCLStep(String classToLoad) {
+        this.classToLoad = classToLoad;
     }
 
     @Restricted(NoExternalUse.class)
-    public String getText() {
-        return text;
+    public String getClassToLoad() {
+        return classToLoad;
     }
 
     @Override
@@ -37,19 +37,24 @@ public class JaxbParseStep extends Builder implements SimpleBuildStep {
                         FilePath workspace,
                         Launcher launcher,
                         TaskListener listener) throws InterruptedException, IOException {
-        listener.getLogger().println("I'm going to parse: " + text);
-        String parsed = new String(JaxbDependency.parse(text));
+        listener.getLogger().println("I'm going to load: " + classToLoad);
+        Class c;
+        try {
+            c = this.getClass().getClassLoader().loadClass(classToLoad);
+        } catch (ClassNotFoundException e) {
+            throw new IOException("Class not found: " + classToLoad, e);
+        }
 
-        listener.getLogger().println("Parsed text: " + parsed);
+        listener.getLogger().println("Loaded class: " + c.getClass().getCanonicalName());
     }
 
     @Extension
-    @Symbol("parsetext")
+    @Symbol("loadclassusingclasscl")
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
         @Override
         public String getDisplayName() {
-            return "Parse a text with javax.xml.bind.DatatypeConverter.parseBase64Binary";
+            return "Load class using class CL";
         }
 
         @Override

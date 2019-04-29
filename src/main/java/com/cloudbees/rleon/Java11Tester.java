@@ -1,23 +1,13 @@
 package com.cloudbees.rleon;
 import hudson.Extension;
 import hudson.model.ManagementLink;
-import hudson.model.PeriodicWork;
-import hudson.util.VersionNumber;
-import jenkins.model.Jenkins;
 import jenkins.security.stapler.StaplerDispatchable;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.compression.CompressionFilter;
-import org.kohsuke.stapler.verb.GET;
 
 import javax.annotation.CheckForNull;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Stream;
 
 @Extension
 @Symbol("java11tester")
@@ -47,15 +37,20 @@ public class Java11Tester extends ManagementLink {
     @StaplerDispatchable
     public HttpResponse doIndex(StaplerRequest req) {
         StringBuilder s = new StringBuilder(300);
-        s.append("<html><body>");
+        s.append("<html><body>\n\n");
 
-        s.append("<ul><li>Parse 'a text to parse': ");
-        s.append("<a href=\"parseText?text=a%20text%20to%20parse\">Click to parse text</a>");
+        s.append("<ul>\n\t<li>Parse 'a text to parse': ");
+        s.append("<a href=\"parseText?text=a%20text%20to%20parse\">Click to parse text</a></li>\n");
 
-        s.append("</li><li>Load 'javax.xml.bind.DatatypeConverter' class: ");
-        s.append("<a href=\"loadClass?class=javax.xml.bind.DatatypeConverter\">Click to load the class</a>");
+        s.append("\t<li>Load 'javax.xml.bind.DatatypeConverter' class using getClass().getClassLoader(): ");
+        s.append("<a href=\"loadClassUsingClassCL?class=sun.misc.BASE64Encoder\">Click to load the class</a>\n");
+        s.append("\t<i>You can load whatever class requesting loadClassUsingClassCL?class=whatever</i></li>\n");
 
-        s.append("</li></ul></body></html>");
+        s.append("\t<li>Load 'javax.xml.bind.DatatypeConverter' class using Thread.currentThread().getContextClassLoader(): ");
+        s.append("<a href=\"loadClassUsingThreadContextCL?class=sun.misc.BASE64Encoder\">Click to load the class</a>\n");
+        s.append("\t<i>You can load whatever class requesting loadClassUsingThreadContextCL?class=whatever</i></li>\n");
+
+        s.append("</ul>\n\n</body></html>");
 
         return HttpResponses.literalHtml(s.toString());
     }
@@ -66,12 +61,12 @@ public class Java11Tester extends ManagementLink {
             StringBuilder s = new StringBuilder(300);
             s.append("<html><body>");
 
-            s.append("<ul><li>Text: ");
+            s.append("\n\n<ul>\t<li>Text: ");
             s.append(req.getParameter("text"));
 
-            s.append("</li><li>Parsed: ");
-            s.append(new String(JaxbDependency.parse(req.getParameter("text"))));
-            s.append("</li></ul></body></html>");
+            s.append("</li>\n\t<li>Parsed: ");
+            s.append(Encoder.encode(req.getParameter("text")));
+            s.append("</li>\n</ul>\n\n</body></html>");
 
             return HttpResponses.literalHtml(s.toString());
         } else {
@@ -80,19 +75,44 @@ public class Java11Tester extends ManagementLink {
     }
 
     @StaplerDispatchable
-    public HttpResponse doLoadClass(StaplerRequest req) throws ClassNotFoundException {
+    public HttpResponse doLoadClassUsingThreadContextCL(StaplerRequest req) throws ClassNotFoundException {
         if(req.hasParameter("class")) {
             StringBuilder s = new StringBuilder(300);
-            s.append("<html><body>");
+            s.append("<html><body>\n\n");
 
-            s.append("<ul><li>Class: ");
+            s.append("<ul>\n\t<li>Class: ");
             s.append(req.getParameter("class"));
 
-            s.append("</li><li>Loaded: ");
-            Class c = Thread.currentThread().getContextClassLoader().loadClass(req.getParameter("class"));
+            s.append("</li>\n\t<li>Loaded: ");
+            String className = req.getParameter("class");
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            System.out.format("Try to load class %s using %s%n", req.getParameter("class"), classLoader);
+            Class c = classLoader.loadClass(className);
             s.append(c.getCanonicalName());
 
-            s.append("</li></ul></body></html>");
+            s.append("</li>\n</ul>\n\n</body></html>");
+            return HttpResponses.literalHtml(s.toString());
+        } else {
+            return HttpResponses.errorWithoutStack(500, "Pass the 'class' param");
+        }
+    }
+    @StaplerDispatchable
+    public HttpResponse doLoadClassUsingClassCL(StaplerRequest req) throws ClassNotFoundException {
+        if(req.hasParameter("class")) {
+            StringBuilder s = new StringBuilder(300);
+            s.append("<html><body>\n\n");
+
+            s.append("<ul>\n\t<li>Class: ");
+            s.append(req.getParameter("class"));
+
+            s.append("</li>\n\t<li>Loaded: ");
+            String className = req.getParameter("class");
+            ClassLoader classLoader = getClass().getClassLoader();
+            System.out.format("Try to load class %s using %s%n", req.getParameter("class"), classLoader);
+            Class c = classLoader.loadClass(className);
+            s.append(c.getCanonicalName());
+
+            s.append("</li>\n</ul>\n\n</body></html>");
             return HttpResponses.literalHtml(s.toString());
         } else {
             return HttpResponses.errorWithoutStack(500, "Pass the 'class' param");

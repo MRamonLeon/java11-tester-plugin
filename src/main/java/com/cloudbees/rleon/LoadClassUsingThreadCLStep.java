@@ -19,11 +19,11 @@ import java.io.IOException;
 /**
  * A simple build step to check if the failure is caught during a build
  */
-public class LoadClassStep extends Builder implements SimpleBuildStep {
+public class LoadClassUsingThreadCLStep extends Builder implements SimpleBuildStep {
     private final String classToLoad;
 
     @DataBoundConstructor
-    public LoadClassStep(String classToLoad) {
+    public LoadClassUsingThreadCLStep(String classToLoad) {
         this.classToLoad = classToLoad;
     }
 
@@ -38,9 +38,9 @@ public class LoadClassStep extends Builder implements SimpleBuildStep {
                         Launcher launcher,
                         TaskListener listener) throws InterruptedException, IOException {
         listener.getLogger().println("I'm going to load: " + classToLoad);
-        Class c = null;
+        Class c;
         try {
-            c = this.getClass().getClassLoader().loadClass(classToLoad);
+            c = Thread.currentThread().getContextClassLoader().loadClass(classToLoad);
         } catch (ClassNotFoundException e) {
             throw new IOException("Class not found: " + classToLoad, e);
         }
@@ -49,12 +49,12 @@ public class LoadClassStep extends Builder implements SimpleBuildStep {
     }
 
     @Extension
-    @Symbol("loadclass")
+    @Symbol("loadclassusingthreadcl")
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
         @Override
         public String getDisplayName() {
-            return "Load a class";
+            return "Load class using thread cl";
         }
 
         @Override
